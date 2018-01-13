@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LocalStorage Demo - November 2017</title>
+</head>
+<body>
+<h1>Local Storage Demo, 25.10.2017</h1>
+<input type="text" id="key" placeholder="enter key" size = "10">
+<input type="text" id="value" placeholder="enter value" size = "30">
+<input type="button" value = "Save to localStorage" onclick = "saveToLocalStorage()">
+<br/><br/>
+<input type="button" value = "Show localStorage" onclick = "showLocalStorage()">
+<input type="button" value = "Check connection" onclick = "checkStatus()">
+<p id = "localStorage"></p>
+<p id = "connection"></p>
+</body>
+<script>
+	var saveToLocalStorage = function() {
+		var key = getValue('key');
+		if(key != "") {
+			var value = getValue('value');
+			localStorage.setItem(key, value);
+			alert("Saved " + key + ": " + value + " to localStorage")
+			setValue('key', '');
+			setValue('value', '');
+		}
+	}
+	var checkStatus = function() {		
+		if(navigator.online) {
+			setInnerHTML('connection',"online");			
+			//TODO send localStorage data to server			
+			localStorage.clear(); //TODO clear only after you get acknowledgement from server
+		} else {		
+			setInnerHTML('connection',"offline");			
+		}
+	}
+	
+	var showLocalStorage = function() {
+		var str = "localStorage contents:<ul>";
+		for(var i=0; i<localStorage.length; i++){
+			str += "<li>"+localStorage.key(i) + ": " + localStorage.getItem(localStorage.key(i));
+		}
+		str += "</ul>"
+		setInnerHTML('localStorage', str);
+	}
+	
+	var getValue = function(id) {
+		return document.getElementById(id).value;
+	}
+	
+	var setValue = function(id, value) {
+		document.getElementById(id).value = value;
+	}
+	
+	var setInnerHTML = function(id, text) {
+		document.getElementById(id).innerHTML = text;
+	}
+</script>
+</html>

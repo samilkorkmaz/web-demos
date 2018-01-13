@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Canvas and Time Interval Demo - January 2018</title>
+</head>
+<body>
+
+<canvas id="myCanvas" width="1000" height="800" style="border:2px solid #d0d0d0;"></canvas>
+
+<script>
+
+setInterval(function(){ 
+		clearCanvas();
+		drawText("Şamil Korkmaz ÜĞŞÇİ ışöçğü", 100, 40);
+		drawTrain();
+	}, 20);
+
+var arrowX0 = 0;
+var angle_rad = 0;
+
+function deg2rad(val_deg) {
+	return val_deg * Math.PI/180;
+}
+
+function rad2deg(val_rad) {
+	return val_rad * 180/Math.PI;
+}
+
+function getX0() {	
+	return arrowX0 += 1;
+}
+
+function getY0() {
+	angle_rad += deg2rad(5);
+	return 100 + 50*Math.sin(angle_rad);
+}
+
+function drawTrain() {
+	var x0 = getX0();
+	var y0 = getY0();	
+	drawCircle(x0, y0, 2, 2, "#000000", "#000000");
+	drawArrow(x0, y0, rad2deg(angle_rad), 80, 2, "#000000"); 	
+}
+	
+function clearCanvas() {
+	var c = document.getElementById("myCanvas");
+	var ctx = c.getContext("2d");
+	ctx.clearRect(0, 0, c.width, c.height);
+}
+	
+function get2DContext() {
+	var c = document.getElementById("myCanvas");
+	var ctx = c.getContext("2d");
+	return ctx;
+}
+
+function drawText(text, x, y) {	
+	var ctx = get2DContext();
+	ctx.font = "20px Arial";
+	ctx.fillText(text, x, y);
+}
+	
+function drawCircle(xCenter, yCenter, radius, lineWidth, lineColor, fillColor) {
+	var ctx = get2DContext();
+	ctx.beginPath();
+	ctx.arc(xCenter, yCenter, radius, 0, 2*Math.PI);
+	ctx.strokeStyle = lineColor;
+    ctx.lineWidth = lineWidth;
+	ctx.stroke();
+	ctx.fillStyle = fillColor;
+    ctx.fill();
+}
+ 
+function drawArrow(fromx, fromy, angleFromTrueNorth_deg, length, lineWidth, color){
+     var headlen = 10;
+     var angleFromTrueNorth_rad = deg2rad(angleFromTrueNorth_deg);
+	 var dx = length * Math.sin(angleFromTrueNorth_rad);
+	 var dy = length * Math.cos(angleFromTrueNorth_rad);
+	 var tox = fromx + dx;
+	 var toy = fromy - dy;
+
+	 var ctx = get2DContext();
+     //starting path of the arrow from the start square to the end square and drawing the stroke
+     ctx.beginPath();
+     ctx.moveTo(fromx, fromy);
+     ctx.lineTo(tox, toy);
+     ctx.strokeStyle = color;
+     ctx.lineWidth = lineWidth;
+     ctx.stroke();
+
+     //starting a new path from the head of the arrow to one of the sides of the point
+     ctx.beginPath();
+     ctx.moveTo(tox, toy);
+	 var arrowAngle_rad = angleFromTrueNorth_rad - Math.PI/2; //convert to arrow angle reference frame
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad-Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad-Math.PI/7));
+
+     //path from the side point of the arrow, to the other side point
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad+Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad+Math.PI/7));
+
+     //path from the side point back to the tip of the arrow, and then again to the opposite side point
+     ctx.lineTo(tox, toy);
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad-Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad-Math.PI/7));
+
+     //draws the paths created above
+     ctx.strokeStyle = color;
+     ctx.lineWidth = lineWidth;
+     ctx.stroke();
+     ctx.fillStyle = color;
+     ctx.fill();
+}
+ 
+</script> 
+
+</body>
+</html>

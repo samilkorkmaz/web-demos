@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Projectile Motion Demo - January 2018</title>
+</head>
+<body>
+<table style = "width:100%">
+<tr>
+<td>
+<input type="text" id="gravity" placeholder="g [m/s^2]" size = "10" value = "9.8">
+<input type="text" id="dt" placeholder="dt [s]" size = "10" value = "0.05">
+<input type="text" id="angle_deg" placeholder="angle [deg]" size = "10" value = "60" onkeyup="keyPressed()">
+<input type="text" id="speed_mps" placeholder="speed [m/s]" size = "10" value = "100" onkeyup="keyPressed()">
+<input type="text" id="inputTargetWidth" placeholder="target width [m]" size = "10" value = "20" onkeyup="keyPressed()">
+<input type="text" id="inputTargetHeight" placeholder="target height [m]" size = "10" value = "40" onkeyup="keyPressed()">
+<input type="button" id="btRun" value = "Run" onclick = "run()">
+</td>
+</tr>
+<tr>
+<td>
+<canvas id="myCanvas" width="900" height="600" style="border:2px solid #d0d0d0;"></canvas>
+</td>
+</tr>
+</table>
+
+<script>
+var canvas = document.getElementById("myCanvas");
+canvas.addEventListener("mousedown", myMouseDown, false);
+const canvasHeight = canvas.height;	
+var targetWidth = getValueAsFloat('inputTargetWidth');
+var targetHeight = getValueAsFloat('inputTargetHeight');
+var targetX = 600;
+var targetY = 100;
+
+const speed_mps = getValueAsFloat('speed_mps');
+const angle_rad = deg2rad(getValueAsFloat('angle_deg'));
+drawVelocityVector(0,0,speed_mps,angle_rad);
+drawTarget();		
+
+function myMouseDown(event) {
+	//alert("x: " + event.pageX + ", y: " + event.pageY);
+	var rect = canvas.getBoundingClientRect();
+	targetX = event.pageX - rect.left;
+	targetY = canvasHeight - event.pageY + rect.top;	
+	console.log("x: " + event.pageX + ", y: " + event.pageY + ", targetX: " + targetX + ", targetY: " + targetY);
+	clearCanvas();
+	const speed_mps = getValueAsFloat('speed_mps');
+	const angle_rad = deg2rad(getValueAsFloat('angle_deg'));
+	drawVelocityVector(0,0,speed_mps,angle_rad);
+	drawTarget();
+}
+
+function drawTarget() {	
+	var ctx = canvas.getContext("2d");
+	targetWidth = getValueAsFloat('inputTargetWidth');
+	targetHeight = getValueAsFloat('inputTargetHeight');
+	ctx.beginPath();
+	ctx.rect(targetX, canvasHeight-targetY-targetHeight, targetWidth, targetHeight);	
+	ctx.fillStyle = "#ffaa00";
+    ctx.fill();	
+	ctx.lineWidth = 1;
+     ctx.stroke();	
+}
+
+function keyPressed() {
+	clearCanvas();
+	const speed_mps = getValueAsFloat('speed_mps');
+	const angle_rad = deg2rad(getValueAsFloat('angle_deg'));
+	drawVelocityVector(0,0,speed_mps,angle_rad);
+	drawTarget();	
+}
+
+function drawVelocityVector(x0_m, y0_m, speed_mps, angle_rad) {		
+	const arrowLength = speed_mps;
+	drawArrow(x0_m, canvasHeight-y0_m, rad2deg(Math.PI/2-angle_rad), arrowLength, 2, "#000000");
+}
+
+function run() {
+	disableButton(true);
+	const speed_mps = getValueAsFloat('speed_mps');
+	const angle_rad = deg2rad(getValueAsFloat('angle_deg'));
+	const traj1 = calcTraj(0, 0, speed_mps, angle_rad);
+	const traj2 = calcTraj(targetX, targetY, 0.5*speed_mps, Math.PI - 0.5*angle_rad);	
+	var iTraj1 = 0;	
+	var iTraj2 = 0;	
+	var isTraj1Ended = false;
+	var isTraj2Ended = false;
+	var interval = setInterval(function(){ 				
+		const target = {X: targetX, Y:targetY, Width: targetWidth, Height: targetHeight}; //target position might be updated via mouse mid-simulation, therefore, it is set inside setInterval.
+		clearCanvas();
+		drawVelocityVector(0, 0, speed_mps, angle_rad);
+		drawVelocityVector(targetX, targetY, speed_mps, Math.PI - angle_rad);
+		drawTarget();
+		drawTraj(traj1);
+		drawTraj(traj2);
+		var x1 = traj1[iTraj1][1];
+		var y1 = traj1[iTraj1][2];		
+		var x2 = traj2[iTraj2][1];
+		var y2 = traj2[iTraj2][2];		
+		drawCircle(x1, canvasHeight-y1, 3, "#cc0000", "#cc0000");		
+		drawCircle(x2, canvasHeight-y2, 3, "#cc0000", "#cc0000");		
+		//check stop conditions
+		if(iTraj1 == traj1.length-1){						
+			isTraj1Ended = true;
+		}
+		if(iTraj2 == traj2.length-1){						
+			isTraj2Ended = true;
+		}				
+		if(isTraj1Ended && isTraj2Ended){
+			clearInterval(interval);
+			disableButton(false);
+			console.log('stopped: both trajectories hit ground hit');			
+		}
+		if(targetHit(x1, y1, target)) {
+			clearInterval(interval);
+			disableButton(false);
+			console.log('stopped: target2 hit');
+		}
+		if(!isTraj1Ended) iTraj1++;
+		if(!isTraj2Ended) iTraj2++;		
+	}, 10);
+}
+
+function targetHit(x, y, target) {
+	return ((x >= target.X && x <= target.X + target.Width) && (y >= target.Y && y <= target.Y + target.Height));
+}
+
+function disableButton(isDisabled) {
+	document.getElementById("btRun").disabled = isDisabled;
+}
+
+function drawTraj(traj) {
+	for(var i=0; i<traj.length; i++) {
+		var x = traj[i][1];
+		var y = traj[i][2];
+		drawCircle(x, canvasHeight-y, 0.2, "#000000", "#000000");
+	}
+}
+
+function calcTraj(x0_m, y0_m, speed_mps, angle_rad) {
+	const gravity_mps2 = getValueAsFloat('gravity');
+	const dt_s = getValueAsFloat('dt');	
+	var Vx0_mps = speed_mps * Math.cos(angle_rad);
+	var Vy0_mps = speed_mps * Math.sin(angle_rad);	
+	//const tf_s = 2*Vy0_mps/gravity_mps2;
+	const slns = calcRoots(-0.5*gravity_mps2, Vy0_mps, y0_m);
+	const tf_s = Math.max(slns[0], slns[1]);
+	var t_s = 0;
+	var traj = [];
+	while(t_s <= tf_s) {
+		var x = x0_m + Vx0_mps * t_s;
+		var y = y0_m + Vy0_mps * t_s - 0.5*gravity_mps2 * t_s * t_s;				
+		traj.push([t_s, x, y]);
+		t_s += dt_s;
+	}
+	return traj;
+}
+
+//Solution of quadratic equation
+function calcRoots(a, b, c) {
+	var sln1 = (-b + Math.sqrt(b*b-(4*a*c)))/(2*a);
+	var sln2 = (-b - Math.sqrt(b*b-(4*a*c)))/(2*a);
+	return [sln1, sln2];
+}
+
+function getValueAsFloat(id) {
+	return parseFloat(getValue(id));
+}
+
+function getValue(id) {
+	return document.getElementById(id).value;
+}
+
+function deg2rad(val_deg) {
+	return val_deg * Math.PI/180;
+}
+
+function rad2deg(val_rad) {
+	return val_rad * 180/Math.PI;
+}
+	
+function clearCanvas() {
+	var c = document.getElementById("myCanvas");
+	var ctx = c.getContext("2d");
+	ctx.clearRect(0, 0, c.width, c.height);
+}
+
+function drawText(text, x, y) {	
+	var ctx = canvas.getContext("2d");
+	ctx.font = "20px Arial";
+	ctx.fillText(text, x, y);
+}
+	
+function drawCircle(xCenter, yCenter, radius, lineColor, fillColor) {
+	var ctx = canvas.getContext("2d");
+	ctx.beginPath();
+	ctx.arc(xCenter, yCenter, radius, 0, 2*Math.PI);
+	ctx.strokeStyle = lineColor;    
+	ctx.stroke();
+	ctx.fillStyle = fillColor;
+    ctx.fill();
+}
+ 
+function drawArrow(fromx, fromy, angleFromTrueNorth_deg, length, lineWidth, color){
+     var headlen = 10;
+     var angleFromTrueNorth_rad = deg2rad(angleFromTrueNorth_deg);
+	 var dx = length * Math.sin(angleFromTrueNorth_rad);
+	 var dy = length * Math.cos(angleFromTrueNorth_rad);
+	 var tox = fromx + dx;
+	 var toy = fromy - dy;
+
+	 var ctx = canvas.getContext("2d");
+     //starting path of the arrow from the start square to the end square and drawing the stroke
+     ctx.beginPath();
+     ctx.moveTo(fromx, fromy);
+     ctx.lineTo(tox, toy);
+     ctx.strokeStyle = color;
+     ctx.lineWidth = lineWidth;
+     ctx.stroke();
+
+     //starting a new path from the head of the arrow to one of the sides of the point
+     ctx.beginPath();
+     ctx.moveTo(tox, toy);
+	 var arrowAngle_rad = angleFromTrueNorth_rad - Math.PI/2; //convert to arrow angle reference frame
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad-Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad-Math.PI/7));
+
+     //path from the side point of the arrow, to the other side point
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad+Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad+Math.PI/7));
+
+     //path from the side point back to the tip of the arrow, and then again to the opposite side point
+     ctx.lineTo(tox, toy);
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad-Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad-Math.PI/7));
+
+     //draws the paths created above
+     ctx.strokeStyle = color;
+     ctx.lineWidth = lineWidth;
+     ctx.stroke();
+     ctx.fillStyle = color;
+     ctx.fill();
+}
+ 
+</script> 
+
+</body>
+</html>

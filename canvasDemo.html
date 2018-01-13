@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Canvas Demo - January 2018</title>
+</head>
+<body>
+
+<canvas id="myCanvas" width="1000" height="800" style="border:2px solid #d0d0d0;"></canvas>
+
+<script>
+
+drawText("Şamil Korkmaz ÜĞŞÇİ ışöçğü", 10, 40);
+drawCircle(135, 100, 50, 3, "#cc0000");
+drawArrow(150, 180, 60, 80, 2, "#000000");
+
+function get2DContext() {
+	var c = document.getElementById("myCanvas");
+	var ctx = c.getContext("2d");
+	return ctx;
+}
+
+function drawText(text, x, y) {	
+	var ctx = get2DContext();
+	ctx.font = "20px Arial";
+	ctx.fillText(text, x, y);
+}
+	
+function drawCircle(x, y, r, lineWidth, color) {
+	var ctx = get2DContext();
+	ctx.beginPath();
+	ctx.arc(x, y, r,0,2*Math.PI);
+	ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+	ctx.stroke();
+}
+ 
+function drawArrow(fromx, fromy, angleFromTrueNorth_deg, length, lineWidth, color){
+     var headlen = 10;
+     var angleFromTrueNorth_rad = angleFromTrueNorth_deg * Math.PI/180;
+	 var dx = length * Math.sin(angleFromTrueNorth_rad);
+	 var dy = length * Math.cos(angleFromTrueNorth_rad);
+	 var tox = fromx + dx;
+	 var toy = fromy - dy;
+
+	 var ctx = get2DContext();
+     //starting path of the arrow from the start square to the end square and drawing the stroke
+     ctx.beginPath();
+     ctx.moveTo(fromx, fromy);
+     ctx.lineTo(tox, toy);
+     ctx.strokeStyle = color;
+     ctx.lineWidth = lineWidth;
+     ctx.stroke();
+
+     //starting a new path from the head of the arrow to one of the sides of the point
+     ctx.beginPath();
+     ctx.moveTo(tox, toy);
+	 var arrowAngle_rad = angleFromTrueNorth_rad - Math.PI/2; //convert to arrow angle reference frame
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad-Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad-Math.PI/7));
+
+     //path from the side point of the arrow, to the other side point
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad+Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad+Math.PI/7));
+
+     //path from the side point back to the tip of the arrow, and then again to the opposite side point
+     ctx.lineTo(tox, toy);
+     ctx.lineTo(tox-headlen*Math.cos(arrowAngle_rad-Math.PI/7),toy-headlen*Math.sin(arrowAngle_rad-Math.PI/7));
+
+     //draws the paths created above
+     ctx.strokeStyle = color;
+     ctx.lineWidth = lineWidth;
+     ctx.stroke();
+     ctx.fillStyle = color;
+     ctx.fill();
+}
+ 
+</script> 
+
+</body>
+</html>
